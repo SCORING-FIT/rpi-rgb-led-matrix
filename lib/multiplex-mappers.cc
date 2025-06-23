@@ -499,16 +499,21 @@ public:
     ~P5Outdoor320x160_8S_Mapper() override = default;
 
     void MapSinglePanel(int x, int y, int *px, int *py) const override {
-        const int bx = x / 16;  // block x (0..3)
-        const int by = y / 8;   // block y (0..3)
-        const int ox = x % 16;  // offset in block x (0..15)
-        const int oy = y % 8;   // offset in block y (0..7)
+        const bool is_top_stripe = (y % (panel_rows_/2)) < panel_rows_/4;
+        const stx = is_top_stripe ? x + panel_cols_ : x;
+        const sty = ((y / (panel_rows_/2)) * (panel_rows_/4)
+                  + y % (panel_rows_/4));
+
+        const int bx = stx / 16;  // block x (0..3)
+        const int by = sty / 8;   // block y (0..3)
+        const int ox = stx % 16;  // offset in block x (0..15)
+        const int oy = sty % 8;   // offset in block y (0..7)
 
         // X calculation - alternates between adding 16 or 0 based on block positions
         *px = (bx % 2) * 32 + (by % 2 == 0) * 16 + ox;
 
         // Y calculation - adds or removes 8 in certain block combinations
-        *py = y + (
+        *py = sty + (
             (by % 2 == 0 && bx < 2) ? 8 :    // First two columns in even block rows
             (by % 2 == 1 && bx >= 2) ? -8 :  // Last two columns in odd block rows
             0                                // No change for other cases
